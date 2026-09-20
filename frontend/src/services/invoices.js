@@ -18,4 +18,5 @@ export const invoicesApi = {
   },
   validate: (id) => api.post(`/invoices/${id}/validate/`),
   matchPo: (id) => api.post(`/invoices/${id}/match-po/`),
+  submitForApproval: (id) => api.post(`/invoices/${id}/submit-for-approval/`),
 }

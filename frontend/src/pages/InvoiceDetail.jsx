@@ -4,6 +4,7 @@ import {
   Building2,
   Calendar,
   Save,
+  Send,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -54,6 +55,7 @@ export default function InvoiceDetail() {
   const [actionSubmitting, setActionSubmitting] = useState(false)
   const [matchResult, setMatchResult] = useState(null)
   const [matching, setMatching] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -117,6 +119,19 @@ export default function InvoiceDetail() {
   const openModal = (action, exception) => setModalState({ open: true, action, exception })
   const closeModal = () => setModalState({ open: false, action: null, exception: null })
 
+  const handleSubmitForApproval = async () => {
+    setSubmitting(true)
+    try {
+      await invoicesApi.submitForApproval(id)
+      toast.success('Invoice submitted for approval.')
+      load()
+    } catch (err) {
+      toast.error(extractErrorMessage(err))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   const handleExceptionAction = async (comment) => {
     setActionSubmitting(true)
     try {
@@ -166,6 +181,11 @@ export default function InvoiceDetail() {
         <div className="text-right">
           <p className="text-xs text-slate-400">Total Amount</p>
           <p className="text-2xl font-semibold text-slate-800">{formatCurrency(invoice.total_amount, invoice.currency)}</p>
+          {invoice.status === 'VALIDATED' && openExceptions.length === 0 && (
+            <Button size="sm" icon={Send} className="mt-2" onClick={handleSubmitForApproval} loading={submitting}>
+              Submit for Approval
+            </Button>
+          )}
         </div>
       </div>
 

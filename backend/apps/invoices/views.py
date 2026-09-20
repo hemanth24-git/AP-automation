@@ -40,7 +40,15 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         return InvoiceDetailSerializer
 
     def get_permissions(self):
-        if self.action in ("update", "partial_update", "destroy", "update_extracted_fields", "validate_invoice", "match_po"):
+        if self.action in (
+            "update",
+            "partial_update",
+            "destroy",
+            "update_extracted_fields",
+            "validate_invoice",
+            "match_po",
+            "submit_for_approval",
+        ):
             return [IsAuthenticated(), CanProcessInvoices()]
         return [IsAuthenticated()]
 
@@ -111,6 +119,26 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         invoice = self.get_object()
         result = match_invoice_to_po(invoice)
         return Response(result)
+
+    @action(detail=True, methods=["post"], url_path="submit-for-approval")
+    def submit_for_approval(self, request, pk=None):
+        from apps.approvals.services import create_workflow
+        from apps.invoices.models import InvoiceStatus
+
+        invoice = self.get_object()
+        if invoice.status != InvoiceStatus.VALIDATED:
+            return Response(
+                {"detail": "Only validated invoices with no open exceptions can be submitted for approval."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if invoice.exceptions.filter(status="OPEN").exists():
+            return Response(
+                {"detail": "Resolve, reject, or override all open exceptions before submitting for approval."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        create_workflow(invoice)
+        invoice.refresh_from_db()
+        return Response(InvoiceDetailSerializer(invoice, context={"request": request}).data)
 
     def _sync_field_to_invoice(self, invoice, field_name, value):
         mapping = {

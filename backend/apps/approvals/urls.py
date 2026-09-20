@@ -1,3 +1,8 @@
-from django.urls import path
+from rest_framework.routers import DefaultRouter
 
-urlpatterns = []
+from apps.approvals.views import ApprovalStepViewSet
+
+router = DefaultRouter()
+router.register("", ApprovalStepViewSet, basename="approval")
+
+urlpatterns = router.urls
