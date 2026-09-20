@@ -8,6 +8,7 @@ import {
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import ConfidenceBadge from '../components/invoices/ConfidenceBadge'
+import ExceptionActionModal from '../components/invoices/ExceptionActionModal'
 import InvoicePreview from '../components/invoices/InvoicePreview'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
@@ -17,6 +18,7 @@ import LoadingState from '../components/ui/LoadingState'
 import StatusBadge from '../components/ui/StatusBadge'
 import { useToast } from '../context/ToastContext'
 import { extractErrorMessage } from '../services/api'
+import { exceptionsApi } from '../services/exceptions'
 import { invoicesApi } from '../services/invoices'
 
 const FIELD_LABELS = {
@@ -47,6 +49,8 @@ export default function InvoiceDetail() {
   const [fieldValues, setFieldValues] = useState({})
   const [dirty, setDirty] = useState(new Set())
   const [saving, setSaving] = useState(false)
+  const [modalState, setModalState] = useState({ open: false, action: null, exception: null })
+  const [actionSubmitting, setActionSubmitting] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -93,6 +97,26 @@ export default function InvoiceDetail() {
     }
   }
 
+  const openModal = (action, exception) => setModalState({ open: true, action, exception })
+  const closeModal = () => setModalState({ open: false, action: null, exception: null })
+
+  const handleExceptionAction = async (comment) => {
+    setActionSubmitting(true)
+    try {
+      const fn = { resolve: exceptionsApi.resolve, reject: exceptionsApi.reject, override: exceptionsApi.override }[
+        modalState.action
+      ]
+      await fn(modalState.exception.id, comment)
+      toast.success(`Exception ${modalState.action}d.`)
+      closeModal()
+      load()
+    } catch (err) {
+      toast.error(extractErrorMessage(err))
+    } finally {
+      setActionSubmitting(false)
+    }
+  }
+
   if (loading) return <LoadingState label="Loading invoice..." />
   if (error) return <ErrorState message={error} onRetry={load} />
   if (!invoice) return null
@@ -133,11 +157,33 @@ export default function InvoiceDetail() {
           <p className="text-sm font-medium text-orange-800 flex items-center gap-1.5">
             <AlertTriangle size={15} /> {openExceptions.length} open exception{openExceptions.length > 1 ? 's' : ''}
           </p>
-          <ul className="mt-1.5 space-y-1">
+          <ul className="mt-1.5 space-y-1.5">
             {openExceptions.map((exc) => (
-              <li key={exc.id} className="text-xs text-orange-700 flex items-center gap-2">
+              <li key={exc.id} className="text-xs text-orange-700 flex items-center gap-2 flex-wrap">
                 <Badge color="orange">{exc.severity}</Badge>
-                {exc.exception_type_display}: {exc.description}
+                <span>
+                  {exc.exception_type_display}: {exc.description}
+                </span>
+                <span className="ml-auto flex gap-2">
+                  <button
+                    className="font-medium text-emerald-700 hover:underline"
+                    onClick={() => openModal('resolve', { ...exc, invoice_number: invoice.invoice_number })}
+                  >
+                    Resolve
+                  </button>
+                  <button
+                    className="font-medium text-red-700 hover:underline"
+                    onClick={() => openModal('reject', { ...exc, invoice_number: invoice.invoice_number })}
+                  >
+                    Reject
+                  </button>
+                  <button
+                    className="font-medium text-slate-600 hover:underline"
+                    onClick={() => openModal('override', { ...exc, invoice_number: invoice.invoice_number })}
+                  >
+                    Override
+                  </button>
+                </span>
               </li>
             ))}
           </ul>
@@ -255,6 +301,15 @@ export default function InvoiceDetail() {
           </dl>
         </Card>
       </div>
+
+      <ExceptionActionModal
+        open={modalState.open}
+        action={modalState.action}
+        exception={modalState.exception}
+        onClose={closeModal}
+        onSubmit={handleExceptionAction}
+        submitting={actionSubmitting}
+      />
     </div>
   )
 }

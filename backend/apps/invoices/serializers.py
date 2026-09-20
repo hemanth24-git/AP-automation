@@ -62,6 +62,17 @@ class InvoiceExceptionSerializer(serializers.ModelSerializer):
         read_only_fields = ["resolved_by", "resolved_at"]
 
 
+class ExceptionCenterSerializer(InvoiceExceptionSerializer):
+    """Flattened, cross-invoice view used by the Exception Center table."""
+
+    invoice_number = serializers.CharField(source="invoice.invoice_number", read_only=True)
+    vendor_name = serializers.CharField(source="invoice.vendor.name", read_only=True, default=None)
+    invoice_total = serializers.DecimalField(source="invoice.total_amount", max_digits=14, decimal_places=2, read_only=True, default=None)
+
+    class Meta(InvoiceExceptionSerializer.Meta):
+        fields = InvoiceExceptionSerializer.Meta.fields + ["invoice", "invoice_number", "vendor_name", "invoice_total"]
+
+
 class InvoiceListSerializer(serializers.ModelSerializer):
     vendor_name = serializers.CharField(source="vendor.name", read_only=True, default=None)
     open_exception_count = serializers.SerializerMethodField()

@@ -12,6 +12,7 @@ import Select from '../components/ui/Select'
 import StatusBadge from '../components/ui/StatusBadge'
 import Table from '../components/ui/Table'
 import ConfidenceBadge from '../components/invoices/ConfidenceBadge'
+import ExceptionCenter from '../components/invoices/ExceptionCenter'
 import { extractErrorMessage } from '../services/api'
 import { invoicesApi } from '../services/invoices'
 import { INVOICE_TABS } from '../utils/navigation'
@@ -37,7 +38,10 @@ export default function Invoices() {
   const search = searchParams.get('search') || ''
   const [searchInput, setSearchInput] = useState(search)
 
+  const isExceptionTab = activeTab === 'EXCEPTION'
+
   const load = async () => {
+    if (isExceptionTab) return
     setLoading(true)
     setError('')
     try {
@@ -138,27 +142,33 @@ export default function Invoices() {
         </form>
       </div>
 
-      <Card padded={false}>
-        {loading ? (
-          <LoadingState label="Loading invoices..." />
-        ) : error ? (
-          <ErrorState message={error} onRetry={load} />
-        ) : invoices.length === 0 ? (
-          <EmptyState
-            title="No invoices found"
-            description="Try adjusting your filters, or upload a new invoice to get started."
-            actionLabel="Upload Invoice"
-            onAction={() => navigate('/invoices/upload')}
-          />
-        ) : (
-          <>
-            <Table columns={columns} data={invoices} onRowClick={(row) => navigate(`/invoices/${row.id}`)} />
-            <div className="px-4">
-              <Pagination page={page} pageSize={PAGE_SIZE} count={count} onPageChange={setPage} />
-            </div>
-          </>
-        )}
-      </Card>
+      {isExceptionTab ? (
+        <Card>
+          <ExceptionCenter />
+        </Card>
+      ) : (
+        <Card padded={false}>
+          {loading ? (
+            <LoadingState label="Loading invoices..." />
+          ) : error ? (
+            <ErrorState message={error} onRetry={load} />
+          ) : invoices.length === 0 ? (
+            <EmptyState
+              title="No invoices found"
+              description="Try adjusting your filters, or upload a new invoice to get started."
+              actionLabel="Upload Invoice"
+              onAction={() => navigate('/invoices/upload')}
+            />
+          ) : (
+            <>
+              <Table columns={columns} data={invoices} onRowClick={(row) => navigate(`/invoices/${row.id}`)} />
+              <div className="px-4">
+                <Pagination page={page} pageSize={PAGE_SIZE} count={count} onPageChange={setPage} />
+              </div>
+            </>
+          )}
+        </Card>
+      )}
     </div>
   )
 }

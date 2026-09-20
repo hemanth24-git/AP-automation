@@ -11,6 +11,7 @@ urlpatterns = [
     path("api/auth/", include("apps.authentication.urls")),
     path("api/dashboard/", include("apps.dashboard.urls")),
     path("api/invoices/", include("apps.invoices.urls")),
+    path("api/exceptions/", include("apps.invoices.exception_urls")),
     path("api/vendors/", include("apps.vendors.urls")),
     path("api/purchase-orders/", include("apps.purchase_orders.urls")),
     path("api/approvals/", include("apps.approvals.urls")),

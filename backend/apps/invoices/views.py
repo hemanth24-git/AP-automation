@@ -17,6 +17,7 @@ from apps.invoices.serializers import (
     InvoiceUpdateSerializer,
 )
 from apps.invoices.uploads import validate_upload
+from apps.invoices.validation import run_validation
 from apps.ocr.service import run_ocr_pipeline
 
 
@@ -38,7 +39,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         return InvoiceDetailSerializer
 
     def get_permissions(self):
-        if self.action in ("update", "partial_update", "destroy", "update_extracted_fields"):
+        if self.action in ("update", "partial_update", "destroy", "update_extracted_fields", "validate_invoice"):
             return [IsAuthenticated(), CanProcessInvoices()]
         return [IsAuthenticated()]
 
@@ -51,6 +52,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         previous = InvoiceDetailSerializer(self.get_object(), context=self.get_serializer_context()).data
         instance = serializer.save()
+        run_validation(instance)
         log_action(
             action="FIELD_EDIT",
             entity_type="Invoice",
@@ -92,6 +94,15 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             self._sync_field_to_invoice(invoice, field_obj.field_name, item["value"])
 
         invoice.save()
+        run_validation(invoice)
+        invoice.refresh_from_db()
+        return Response(InvoiceDetailSerializer(invoice, context={"request": request}).data)
+
+    @action(detail=True, methods=["post"], url_path="validate")
+    def validate_invoice(self, request, pk=None):
+        invoice = self.get_object()
+        run_validation(invoice)
+        invoice.refresh_from_db()
         return Response(InvoiceDetailSerializer(invoice, context={"request": request}).data)
 
     def _sync_field_to_invoice(self, invoice, field_name, value):
@@ -164,6 +175,7 @@ class InvoiceUploadView(APIView):
 
             try:
                 run_ocr_pipeline(invoice, file_path, content_type)
+                run_validation(invoice)
             except Exception as exc:
                 invoice.status = InvoiceStatus.EXCEPTION
                 invoice.save(update_fields=["status"])
