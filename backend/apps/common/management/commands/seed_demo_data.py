@@ -87,6 +87,11 @@ class Command(BaseCommand):
 
     def reset_data(self):
         self.stdout.write("Resetting existing transactional data...")
+        from apps.audit_logs.models import AuditLog
+        from apps.notifications.models import Notification
+
+        Notification.objects.all().delete()
+        AuditLog.objects.all().delete()
         Payment.objects.all().delete()
         PaymentRequest.objects.all().delete()
         InvoiceException.objects.all().delete()

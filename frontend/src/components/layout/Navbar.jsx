@@ -2,7 +2,7 @@ import { Bell, ChevronDown, LogOut, Menu, Search, User as UserIcon } from 'lucid
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import api from '../../services/api'
+import { notificationsApi } from '../../services/notifications'
 import { ROLE_LABELS } from '../../utils/navigation'
 
 export default function Navbar({ onMenuClick }) {
@@ -16,24 +16,28 @@ export default function Navbar({ onMenuClick }) {
   const profileRef = useRef(null)
   const notifRef = useRef(null)
 
+  const loadUnreadCount = async () => {
+    try {
+      const { data } = await notificationsApi.unreadCount()
+      setUnreadCount(data.count)
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const loadNotifications = async () => {
+    try {
+      const { data } = await notificationsApi.list({ page_size: 8 })
+      setNotifications(data.results || data || [])
+    } catch {
+      /* ignore */
+    }
+  }
+
   useEffect(() => {
-    let mounted = true
-    const load = async () => {
-      try {
-        const { data } = await api.get('/notifications/', { params: { page_size: 6 } })
-        if (!mounted) return
-        setNotifications(data.results || data || [])
-        setUnreadCount((data.results || data || []).filter((n) => !n.is_read).length)
-      } catch {
-        /* notifications endpoint may not be ready yet */
-      }
-    }
-    load()
-    const interval = setInterval(load, 30000)
-    return () => {
-      mounted = false
-      clearInterval(interval)
-    }
+    loadUnreadCount()
+    const interval = setInterval(loadUnreadCount, 30000)
+    return () => clearInterval(interval)
   }, [])
 
   useEffect(() => {
@@ -44,6 +48,38 @@ export default function Navbar({ onMenuClick }) {
     document.addEventListener('mousedown', onClickOutside)
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [])
+
+  const toggleNotifications = () => {
+    setNotifOpen((v) => {
+      const next = !v
+      if (next) loadNotifications()
+      return next
+    })
+  }
+
+  const handleNotificationClick = async (n) => {
+    setNotifOpen(false)
+    if (!n.is_read) {
+      try {
+        await notificationsApi.markRead(n.id)
+        setUnreadCount((c) => Math.max(0, c - 1))
+      } catch {
+        /* ignore */
+      }
+    }
+    if (n.link) navigate(n.link)
+  }
+
+  const handleMarkAllRead = async (e) => {
+    e.stopPropagation()
+    try {
+      await notificationsApi.markAllRead()
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })))
+      setUnreadCount(0)
+    } catch {
+      /* ignore */
+    }
+  }
 
   const submitSearch = (e) => {
     e.preventDefault()
@@ -70,30 +106,37 @@ export default function Navbar({ onMenuClick }) {
 
       <div className="flex items-center gap-2 ml-auto">
         <div className="relative" ref={notifRef}>
-          <button
-            className="relative p-2 rounded-md hover:bg-slate-100 text-slate-500"
-            onClick={() => setNotifOpen((v) => !v)}
-          >
+          <button className="relative p-2 rounded-md hover:bg-slate-100 text-slate-500" onClick={toggleNotifications}>
             <Bell size={19} />
-            {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-            )}
+            {unreadCount > 0 && <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />}
           </button>
           {notifOpen && (
             <div className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg border border-slate-200 py-2 max-h-96 overflow-y-auto">
-              <div className="px-3 py-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                Notifications
+              <div className="px-3 py-1.5 flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Notifications</span>
+                {unreadCount > 0 && (
+                  <button onClick={handleMarkAllRead} className="text-xs text-blue-600 font-medium hover:underline">
+                    Mark all read
+                  </button>
+                )}
               </div>
               {notifications.length === 0 ? (
                 <p className="px-3 py-6 text-sm text-slate-400 text-center">No notifications yet.</p>
               ) : (
                 notifications.map((n) => (
-                  <div key={n.id} className="px-3 py-2 hover:bg-slate-50 border-b border-slate-50 last:border-0">
-                    <p className="text-sm text-slate-700">{n.message}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      {n.created_at ? new Date(n.created_at).toLocaleString() : ''}
+                  <button
+                    key={n.id}
+                    onClick={() => handleNotificationClick(n)}
+                    className={`w-full text-left px-3 py-2 hover:bg-slate-50 border-b border-slate-50 last:border-0 ${
+                      !n.is_read ? 'bg-blue-50/40' : ''
+                    }`}
+                  >
+                    <p className="text-sm text-slate-700 flex items-start gap-1.5">
+                      {!n.is_read && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0" />}
+                      <span>{n.message}</span>
                     </p>
-                  </div>
+                    <p className="text-xs text-slate-400 mt-0.5 ml-3">{new Date(n.created_at).toLocaleString()}</p>
+                  </button>
                 ))
               )}
             </div>
