@@ -110,11 +110,13 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
     extracted_fields = InvoiceExtractedFieldSerializer(many=True, read_only=True)
     exceptions = InvoiceExceptionSerializer(many=True, read_only=True)
     uploaded_by_name = serializers.CharField(source="uploaded_by.display_name", read_only=True, default=None)
+    has_payment_request = serializers.SerializerMethodField()
 
     class Meta:
         model = Invoice
         fields = [
             "id",
+            "has_payment_request",
             "invoice_number",
             "vendor",
             "vendor_name",
@@ -160,6 +162,9 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         self.fields["documents"] = InvoiceDocumentSerializer(many=True, read_only=True, context={"request": request})
         return super().to_representation(instance)
+
+    def get_has_payment_request(self, obj):
+        return hasattr(obj, "payment_request")
 
 
 class InvoiceUpdateSerializer(serializers.ModelSerializer):

@@ -17,11 +17,14 @@ import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import ErrorState from '../components/ui/ErrorState'
 import LoadingState from '../components/ui/LoadingState'
+import Modal from '../components/ui/Modal'
+import Select from '../components/ui/Select'
 import StatusBadge from '../components/ui/StatusBadge'
 import { useToast } from '../context/ToastContext'
 import { extractErrorMessage } from '../services/api'
 import { exceptionsApi } from '../services/exceptions'
 import { invoicesApi } from '../services/invoices'
+import { paymentsApi } from '../services/payments'
 
 const FIELD_LABELS = {
   vendor_name: 'Vendor Name',
@@ -56,6 +59,9 @@ export default function InvoiceDetail() {
   const [matchResult, setMatchResult] = useState(null)
   const [matching, setMatching] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState('BANK_TRANSFER')
+  const [raisingPayment, setRaisingPayment] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -113,6 +119,20 @@ export default function InvoiceDetail() {
       toast.error(extractErrorMessage(err))
     } finally {
       setMatching(false)
+    }
+  }
+
+  const handleRaisePayment = async () => {
+    setRaisingPayment(true)
+    try {
+      const { data } = await paymentsApi.create(id, paymentMethod)
+      toast.success(`Payment request ${data.request_number} created.`)
+      setPaymentModalOpen(false)
+      navigate(`/payments/${data.id}`)
+    } catch (err) {
+      toast.error(extractErrorMessage(err))
+    } finally {
+      setRaisingPayment(false)
     }
   }
 
@@ -184,6 +204,11 @@ export default function InvoiceDetail() {
           {invoice.status === 'VALIDATED' && openExceptions.length === 0 && (
             <Button size="sm" icon={Send} className="mt-2" onClick={handleSubmitForApproval} loading={submitting}>
               Submit for Approval
+            </Button>
+          )}
+          {invoice.status === 'APPROVED' && !invoice.has_payment_request && (
+            <Button size="sm" className="mt-2" onClick={() => setPaymentModalOpen(true)}>
+              Raise Payment Request
             </Button>
           )}
         </div>
@@ -348,6 +373,34 @@ export default function InvoiceDetail() {
           </dl>
         </Card>
       </div>
+
+      <Modal
+        open={paymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
+        title="Raise Payment Request"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setPaymentModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleRaisePayment} loading={raisingPayment}>
+              Create Request
+            </Button>
+          </>
+        }
+      >
+        <Select
+          label="Payment Method"
+          value={paymentMethod}
+          onChange={(e) => setPaymentMethod(e.target.value)}
+          options={[
+            { label: 'Bank Transfer (NEFT/RTGS)', value: 'BANK_TRANSFER' },
+            { label: 'UPI', value: 'UPI' },
+            { label: 'Cheque', value: 'CHEQUE' },
+            { label: 'Card', value: 'CARD' },
+          ]}
+        />
+      </Modal>
 
       <ExceptionActionModal
         open={modalState.open}

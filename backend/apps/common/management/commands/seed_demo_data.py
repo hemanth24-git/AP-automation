@@ -10,6 +10,7 @@ from apps.approvals.models import ApprovalMatrixRule
 from apps.approvals.services import apply_action, create_workflow
 from apps.audit_logs.services import log_action
 from apps.invoices.matching import match_invoice_to_po
+from apps.payments.advice import generate_payment_advice
 from apps.authentication.models import Role, User
 from apps.invoices.models import (
     ExceptionSeverity,
@@ -382,15 +383,15 @@ class Command(BaseCommand):
                     invoice.save(update_fields=["status"])
                     pr.status = PaymentStatus.PAID
                     pr.save(update_fields=["status"])
-                    Payment.objects.create(
+                    payment = Payment.objects.create(
                         payment_request=pr,
                         transaction_ref=f"TXN{random.randint(100000,999999)}",
                         payment_date=timezone.now() - timedelta(days=max(days_ago - 20, 1)),
                         status=PaymentStatus.PAID,
-                        bank_response={"simulated": True, "gateway": "MockBank", "message": "Payment settled (simulated)."},
-                        advice_generated=True,
+                        bank_response={"simulated": True, "gateway": "MockBank (Simulated)", "message": "Payment settled successfully (simulated -- no real funds were moved)."},
                         processed_by=users[Role.FINANCE_MANAGER],
                     )
+                    generate_payment_advice(payment)
                 else:
                     invoice.status = InvoiceStatus.PAYMENT_PENDING
                     invoice.save(update_fields=["status"])
