@@ -2,6 +2,11 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
+// In Docker Compose, set VITE_API_PROXY_TARGET=http://backend:8000 so the
+// dev server proxies to the backend container by service name instead of
+// localhost (which would not resolve inside the frontend container).
+const apiProxyTarget = process.env.VITE_API_PROXY_TARGET || 'http://localhost:8000'
+
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   test: {
@@ -14,11 +19,11 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: apiProxyTarget,
         changeOrigin: true,
       },
       '/media': {
-        target: 'http://localhost:8000',
+        target: apiProxyTarget,
         changeOrigin: true,
       },
     },
