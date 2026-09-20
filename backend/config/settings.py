@@ -12,6 +12,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config("SECRET_KEY", default="django-insecure-dev-key-change-in-production")
 DEBUG = config("DEBUG", default=True, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
+if DEBUG and "testserver" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append("testserver")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -27,6 +29,7 @@ INSTALLED_APPS = [
     "django_filters",
     "drf_spectacular",
     # local apps
+    "apps.common",
     "apps.authentication",
     "apps.vendors",
     "apps.invoices",
