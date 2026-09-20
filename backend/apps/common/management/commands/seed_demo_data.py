@@ -19,7 +19,6 @@ from apps.invoices.models import (
     InvoiceExtractedField,
     InvoiceLineItem,
     InvoiceStatus,
-    OcrConfidenceLevel,
 )
 from apps.notifications.services import notify_user
 from apps.payments.models import Payment, PaymentMethod, PaymentRequest, PaymentStatus
@@ -273,11 +272,9 @@ class Command(BaseCommand):
             )
 
     def _confidence_level(self, score):
-        if score >= 85:
-            return OcrConfidenceLevel.HIGH
-        if score >= 60:
-            return OcrConfidenceLevel.MEDIUM
-        return OcrConfidenceLevel.LOW
+        from apps.invoices.utils import confidence_level
+
+        return confidence_level(score)
 
     def create_invoices(self, vendors, pos, users):
         active_vendors = [v for v in vendors if v.status == VendorStatus.ACTIVE]
