@@ -10,6 +10,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import ConfidenceBadge from '../components/invoices/ConfidenceBadge'
 import ExceptionActionModal from '../components/invoices/ExceptionActionModal'
 import InvoicePreview from '../components/invoices/InvoicePreview'
+import PoMatchPanel from '../components/invoices/PoMatchPanel'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
@@ -51,6 +52,8 @@ export default function InvoiceDetail() {
   const [saving, setSaving] = useState(false)
   const [modalState, setModalState] = useState({ open: false, action: null, exception: null })
   const [actionSubmitting, setActionSubmitting] = useState(false)
+  const [matchResult, setMatchResult] = useState(null)
+  const [matching, setMatching] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -94,6 +97,20 @@ export default function InvoiceDetail() {
       toast.error(extractErrorMessage(err))
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleRunMatch = async () => {
+    setMatching(true)
+    try {
+      const { data } = await invoicesApi.matchPo(id)
+      setMatchResult(data)
+      toast.success(`PO match result: ${data.status.replace('_', ' ')}`)
+      load()
+    } catch (err) {
+      toast.error(extractErrorMessage(err))
+    } finally {
+      setMatching(false)
     }
   }
 
@@ -228,6 +245,16 @@ export default function InvoiceDetail() {
           </div>
         </Card>
       </div>
+
+      <Card title="Purchase Order Matching" className="mt-5">
+        <PoMatchPanel
+          result={matchResult}
+          onRun={handleRunMatch}
+          running={matching}
+          poNumber={invoice.po_number || invoice.po_number_raw}
+          initialStatus={invoice.po_match_status}
+        />
+      </Card>
 
       <Card title="Line Items" className="mt-5">
         {invoice.line_items.length === 0 ? (

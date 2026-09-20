@@ -1,3 +1,8 @@
-from django.urls import path
+from rest_framework.routers import DefaultRouter
 
-urlpatterns = []
+from apps.purchase_orders.views import PurchaseOrderViewSet
+
+router = DefaultRouter()
+router.register("", PurchaseOrderViewSet, basename="purchase-order")
+
+urlpatterns = router.urls

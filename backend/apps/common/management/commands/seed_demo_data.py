@@ -9,6 +9,7 @@ from django.utils import timezone
 from apps.approvals.models import ApprovalMatrixRule
 from apps.approvals.services import apply_action, create_workflow
 from apps.audit_logs.services import log_action
+from apps.invoices.matching import match_invoice_to_po
 from apps.authentication.models import Role, User
 from apps.invoices.models import (
     ExceptionSeverity,
@@ -288,9 +289,11 @@ class Command(BaseCommand):
             return n
 
         def make_invoice(vendor, po, days_ago, amount, status, confidence, invoice_number=None,
-                          gstin_override=None, force_mismatch=False):
+                          gstin_override=None, force_mismatch=False, mirror_po=False):
             vendor_obj = vendor
             invoice_date = date.today() - timedelta(days=days_ago)
+            if mirror_po and po:
+                amount = po.total_amount
             subtotal = (amount / d("1.18")).quantize(d("0.01"))
             tax = amount - subtotal
             cgst = (tax / 2).quantize(d("0.01")) if vendor_obj.state != "Karnataka" else d("0")
@@ -323,7 +326,19 @@ class Command(BaseCommand):
                 ocr_confidence_level=self._confidence_level(confidence),
                 uploaded_by=users[Role.AP_PROCESSOR],
             )
-            self._add_line_items(invoice, subtotal)
+            if mirror_po and po:
+                for po_line in po.line_items.all():
+                    InvoiceLineItem.objects.create(
+                        invoice=invoice,
+                        line_no=po_line.line_no,
+                        description=po_line.description,
+                        quantity=po_line.quantity,
+                        unit_price=po_line.unit_price,
+                        tax_amount=po_line.tax_amount,
+                        amount=po_line.amount,
+                    )
+            else:
+                self._add_line_items(invoice, subtotal)
             self._extract_fields(invoice, confidence)
             created.append(invoice)
             return invoice
@@ -334,7 +349,11 @@ class Command(BaseCommand):
             po = random.choice(vendor_pos) if vendor_pos else None
             days_ago = [10, 40, 70, 100, 135][i % 5]
             amount = d(random.choice([18000, 42000, 68000, 125000, 320000, 610000]))
-            invoice = make_invoice(vendor, po, days_ago, amount, InvoiceStatus.VALIDATED, random.randint(88, 99))
+            invoice = make_invoice(
+                vendor, po, days_ago, amount, InvoiceStatus.VALIDATED, random.randint(88, 99), mirror_po=bool(po)
+            )
+            if po:
+                match_invoice_to_po(invoice)
             workflow = create_workflow(invoice, notify=False)
             steps = list(workflow.steps.order_by("step_number"))
             # Fully approve half of them, partially approve others

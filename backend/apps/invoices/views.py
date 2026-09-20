@@ -16,6 +16,7 @@ from apps.invoices.serializers import (
     InvoiceListSerializer,
     InvoiceUpdateSerializer,
 )
+from apps.invoices.matching import match_invoice_to_po
 from apps.invoices.uploads import validate_upload
 from apps.invoices.validation import run_validation
 from apps.ocr.service import run_ocr_pipeline
@@ -39,7 +40,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         return InvoiceDetailSerializer
 
     def get_permissions(self):
-        if self.action in ("update", "partial_update", "destroy", "update_extracted_fields", "validate_invoice"):
+        if self.action in ("update", "partial_update", "destroy", "update_extracted_fields", "validate_invoice", "match_po"):
             return [IsAuthenticated(), CanProcessInvoices()]
         return [IsAuthenticated()]
 
@@ -104,6 +105,12 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         run_validation(invoice)
         invoice.refresh_from_db()
         return Response(InvoiceDetailSerializer(invoice, context={"request": request}).data)
+
+    @action(detail=True, methods=["post"], url_path="match-po")
+    def match_po(self, request, pk=None):
+        invoice = self.get_object()
+        result = match_invoice_to_po(invoice)
+        return Response(result)
 
     def _sync_field_to_invoice(self, invoice, field_name, value):
         mapping = {
@@ -176,6 +183,7 @@ class InvoiceUploadView(APIView):
             try:
                 run_ocr_pipeline(invoice, file_path, content_type)
                 run_validation(invoice)
+                match_invoice_to_po(invoice)
             except Exception as exc:
                 invoice.status = InvoiceStatus.EXCEPTION
                 invoice.save(update_fields=["status"])
