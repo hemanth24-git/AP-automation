@@ -1,3 +1,6 @@
+import re
+from datetime import datetime
+
 from django.core.files.storage import default_storage
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -140,6 +143,29 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         invoice.refresh_from_db()
         return Response(InvoiceDetailSerializer(invoice, context={"request": request}).data)
 
+    DATE_FORMATS = (
+        "%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%m/%d/%Y",
+        "%d-%b-%Y", "%d %b %Y", "%d-%B-%Y", "%d %B %Y",
+        "%b %d, %Y", "%B %d, %Y", "%b %d %Y", "%B %d %Y",
+    )
+
+    @classmethod
+    def _parse_amount(cls, value):
+        cleaned = re.sub(r"[^\d.-]", "", value)
+        if not cleaned:
+            return None
+        return float(cleaned)
+
+    @classmethod
+    def _parse_date(cls, value):
+        value = value.strip()
+        for fmt in cls.DATE_FORMATS:
+            try:
+                return datetime.strptime(value, fmt).date()
+            except ValueError:
+                continue
+        return None
+
     def _sync_field_to_invoice(self, invoice, field_name, value):
         mapping = {
             "invoice_number": "invoice_number",
@@ -155,11 +181,11 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             setattr(invoice, mapping[field_name], value)
         elif field_name in decimal_fields:
             try:
-                setattr(invoice, field_name, float(value) if value else None)
+                setattr(invoice, field_name, self._parse_amount(value) if value else None)
             except ValueError:
                 pass
         elif field_name in date_fields:
-            setattr(invoice, field_name, value or None)
+            setattr(invoice, field_name, self._parse_date(value) if value else None)
 
 
 class InvoiceUploadView(APIView):
