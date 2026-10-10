@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GCC Atlas — India GCC activity, source-backed</title>
+  <meta name="description" content="A curated, source-backed view of publicly reported Global Capability Centre activity in India, built for recruitment and staffing teams.">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+  <header class="masthead">
+    <div class="masthead-inner">
+      <a class="brand" href="#/dashboard" style="text-decoration:none;">
+        <span class="brand-mark">GCC Atlas</span>
+        <span class="brand-sub">India · source-backed</span>
+      </a>
+      <nav class="nav" id="nav"></nav>
+    </div>
+  </header>
+
+  <main class="wrap" id="view">
+    <!-- Rendered by assets/app.js -->
+    <noscript>
+      <div class="empty">
+        <div class="empty-title">JavaScript is required</div>
+        <p>GCC Atlas runs entirely in your browser and needs JavaScript enabled to
+           display the dataset. No internet connection is required.</p>
+      </div>
+    </noscript>
+  </main>
+
+  <!-- Data first, then the app that reads it.
+       The dataset is a plain .js file rather than .json so that the app works when
+       you open index.html directly from your computer, with no server needed. -->
+  <script src="data/records.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
