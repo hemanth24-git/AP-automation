@@ -27,3 +27,6 @@ frontend/.vite/
 # Test / coverage
 .coverage
 htmlcov/
+
+# Distribution archive generated from gcc-atlas/ (all contents are tracked there)
+gcc-atlas.zip
