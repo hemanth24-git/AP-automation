@@ -707,6 +707,66 @@ rich(tf, [("A note on Flexiple's own pages: ", True, ACCENT),
      size=11.5, first=True, line=1.3)
 footer(s, "Positioning")
 
+# =========================================================== SLIDE 15B =======
+s = add_slide()
+eyebrow(s, "Positioning")
+title(s, "What it would take to serve the rest of the ecosystem", size=29)
+subtitle(s, "I built for one stakeholder on purpose. Here is what each of the others "
+            "would need before this is worth their time — and which of those I can "
+            "honestly serve today.", size=13.5)
+rule(s, Inches(2.34))
+
+rows2 = [
+    ("Recruitment & staffing", "News, referrals, generic sales tools",
+     "Dated, cited, per-company activity they can check before acting",
+     "Serving now", GREEN, GREEN_BG),
+    ("Advisors & consultants", "Their own networks; subscription research",
+     "Same record, plus who is at MoU stage rather than already committed",
+     "Serving now", GREEN, GREEN_BG),
+    ("Real estate firms", "Leasing data they already hold",
+     "The reverse view — intent signals that precede a space requirement",
+     "Mostly today", GREEN, GREEN_BG),
+    ("State promotion agencies", "Their own pipeline; press monitoring",
+     "A neutral record of what peer states are winning, with sources",
+     "Needs coverage", AMBER, AMBER_BG),
+    ("Companies setting up a GCC", "Advisors, who are themselves conflicted",
+     "Verified cost, incentive and provider data — none of which I hold",
+     "Not yet", RED, RED_BG),
+    ("EOR & legal providers", "Referrals",
+     "Entity-level data tying each centre to its Indian legal entity",
+     "Not yet", RED, RED_BG),
+]
+hdr2 = Inches(2.52)
+cw_a, cw_b, cw_c, cw_d = Inches(2.5), Inches(3.0), Inches(4.3), Inches(1.5)
+x = M
+for lw, lab in zip([cw_a, cw_b, cw_c, cw_d],
+                   ["Stakeholder", "What they use today", "What they would need from this", "Status"]):
+    tf = textbox(s, x, hdr2, lw, Inches(0.25))
+    para(tf, lab.upper(), size=9.5, color=INK3, bold=True, first=True, space_after=0)
+    x += lw + Inches(0.12)
+rule(s, hdr2 + Inches(0.3))
+
+y = hdr2 + Inches(0.44)
+for who, today, need, status, col, colbg in rows2:
+    tf = textbox(s, M, y, cw_a, Inches(0.6))
+    para(tf, who, size=11, color=INK, bold=True, first=True, space_after=0, line=1.25)
+    tf = textbox(s, M + cw_a + Inches(0.12), y, cw_b, Inches(0.6))
+    para(tf, today, size=10.5, color=INK3, first=True, space_after=0, line=1.28)
+    tf = textbox(s, M + cw_a + cw_b + Inches(0.24), y, cw_c, Inches(0.6))
+    para(tf, need, size=10.5, color=INK, first=True, space_after=0, line=1.28)
+    chip(s, M + cw_a + cw_b + cw_c + Inches(0.36), y - Inches(0.02), status, col, colbg, w=cw_d)
+    y += Inches(0.55)
+
+card(s, M, Inches(6.26), CONTENT_W, Inches(0.66), fill=AMBER_BG, border=RGBColor(0xE6, 0xD7, 0xB6))
+tf = textbox(s, M + Inches(0.22), Inches(6.38), CONTENT_W - Inches(0.44), Inches(0.46))
+rich(tf, [("On sizing the problem: ", True, AMBER),
+          ("I could not find a credible public figure for what this asymmetry costs, "
+           "and I will not invent one. Measuring it means asking firms how many "
+           "opportunities they learn about too late — the first thing I would test.",
+           False, INK2)],
+     size=11, first=True, line=1.3)
+footer(s, "Positioning · Other stakeholders")
+
 # =============================================================== SLIDE 16 ====
 s = add_slide()
 eyebrow(s, "Honesty")
