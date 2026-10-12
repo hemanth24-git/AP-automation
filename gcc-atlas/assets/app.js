@@ -1027,8 +1027,11 @@
 
       '<div class="result-count" id="verify-count">0 of ' + allSources.length + ' sources checked</div>' +
 
-      allSources.map(function (item, i) {
-        var key = "gccatlas-verify-" + item.rec.id + "-" + i;
+      allSources.map(function (item) {
+        // Key each tick to the record and its source URL, not to the row's
+        // position. Position-based keys silently move onto the wrong row if a
+        // record or source is ever added, removed or reordered.
+        var key = "gccatlas-verify-" + item.rec.id + "::" + item.src.url;
         return '<div class="verify-row">' +
           '<input type="checkbox" data-key="' + esc(key) + '" aria-label="Mark source as checked">' +
           '<div>' +

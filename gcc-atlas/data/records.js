@@ -581,7 +581,7 @@ var GCC_RECORDS = [
       "If state MoU announcements reliably precede openings by over a year, they are a far earlier signal than the opening itself. This single record is not enough to establish that pattern — it is a hypothesis worth testing across more cases.",
     sources: [
       { name: "The Magnum Ice Cream Company newsroom (press release)", type: "primary", url: "https://news.magnumicecream.com/the-magnum-ice-cream-company-inaugurates-new-global-capability-centre-in-pune/", date: "2026-09-04" },
-      { name: "FoodBev Media", type: "trade", url: "https://www.foodbev.com/news/magnum-ice-cream-company-opens-67-000-sq-ft-global-capability-centre-in-pune", date: "2026-09" },
+      { name: "FoodBev Media", type: "trade", url: "https://www.foodbev.com/post301/magnum-ice-cream-company-opens-67-000-sq-ft-global-capability-centre-in-pune", date: "2026-09-08" },
       { name: "Food Business MEA", type: "trade", url: "https://www.foodbusinessmea.com/magnum-ice-cream-company-opens-67000-square-foot-capability-centre-in-india/", date: "2026-09" }
     ],
     confidence: "High",
@@ -653,15 +653,17 @@ var GCC_RECORDS = [
       "Large service-provider facilities compete for the same candidates as captive centres in the same city. For a staffing firm, that competition matters regardless of how the facility is labelled.",
     sources: [
       { name: "People Matters", type: "trade", url: "https://www.peoplematters.in/news/business/accenture-signs-indian-rupee325-crore-pune-office-deal-to-set-up-global-capability-centre-49508", date: "2026-05" },
-      { name: "SightsIn Plus", type: "trade", url: "https://www.sightsinplus.com/news/industry-news/accenture-sets-up-new-gcc-in-pune-with-%E2%82%B9325-crore-deal/", date: "2026-05" }
+      { name: "Trak.in", type: "news", url: "https://trak.in/stories/accenture-leases-600000-sq-feet-office-space-in-pune-for-new-gcc/", date: "2026-05" }
     ],
     confidence: "Low",
     confidenceBasis:
-      "Two trade publications report consistent figures, but no company release or major business daily was located, the exact date is not pinned down, and the 'GCC' characterisation is the publications' framing for a company that is itself an IT services provider.",
+      "No company release or major business daily was located, the exact date is not pinned down, and the 'GCC' characterisation is the publications' framing for a company that is itself an IT services provider. A follow-up check also found reports that disagree on the basic terms of the lease, which is why this record carries the lowest confidence in the dataset.",
     caveats: [
       "Classification as a GCC is contestable given Accenture's business model.",
       "Only month-level dating available.",
-      "No primary source located."
+      "No primary source located; reporting attributes details to unnamed sources.",
+      "Sources disagree on the deal itself. The figures here (6 lakh sq ft, Baner, approx. INR 325 crore, 15-year term) are the most widely reported, but a separate report describes 345,872 sq ft at Phoenix Millennium Towers in Wakad for approx. INR 355.4 crore over 10 years. These may be two different transactions or a reporting error; we could not resolve it.",
+      "A source originally cited here (SightsIn Plus) would not load during verification on 12 Oct 2026 and has been replaced."
     ]
   },
 
